@@ -36,7 +36,7 @@ const Auth = () => {
                     <h2 className='text-3xl text-center mt-10 text-yellow-400 mb-10'>
                         Employee Login
                     </h2>
-                    <Login />
+                    {/* <Login /> */}
                 </div>
             </div>
         </div>

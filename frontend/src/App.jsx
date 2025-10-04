@@ -8,16 +8,16 @@ import {
 import { Home, Auth, Dashboard, NotFound } from "./pages";
 import Header from "./components/shared/Header";
 import { useSelector } from "react-redux";
-import useLoadData from "./hooks/useLoadData";
-import FullScreenLoader from "./components/shared/FullScreenLoader"
+// import useLoadData from "./hooks/useLoadData";
+// import FullScreenLoader from "./components/shared/FullScreenLoader"
 
 function Layout() {
-  const isLoading = useLoadData();
+  // const isLoading = useLoadData();
   const location = useLocation();
   const hideHeaderRoutes = ["/auth"];
   const { isAuth } = useSelector(state => state.user);
 
-  if(isLoading) return <FullScreenLoader />
+  // if(isLoading) return <FullScreenLoader />
 
   return (
     <>
@@ -26,18 +26,18 @@ function Layout() {
         <Route
           path="/"
           element={
-            <ProtectedRoutes>
+            // <ProtectedRoutes>
               <Home />
-            </ProtectedRoutes>
+            // </ProtectedRoutes>
           }
         />
         <Route path="/auth" element={isAuth ? <Navigate to="/" /> : <Auth />} />
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoutes>
+            // <ProtectedRoutes>
               <Dashboard />
-            </ProtectedRoutes>
+            // </ProtectedRoutes>
           }
         />
         <Route path="*" element={<NotFound />} />
@@ -46,14 +46,14 @@ function Layout() {
   );
 }
 
-function ProtectedRoutes({ children }) {
-  const { isAuth } = useSelector((state) => state.user);
-  if (!isAuth) {
-    return <Navigate to="/auth" />;
-  }
+// function ProtectedRoutes({ children }) {
+//   const { isAuth } = useSelector((state) => state.user);
+//   if (!isAuth) {
+//     return <Navigate to="/auth" />;
+//   }
 
-  return children;
-}
+//   return children;
+// }
 
 function App() {
   return (

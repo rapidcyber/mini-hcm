@@ -1,17 +1,32 @@
-import React from "react";
+import { useEffect, useState } from "react";
+import { getUserData } from "../https";
+import { useDispatch } from "react-redux";
+import { setUser, removeUser } from "../redux/slices/userSlice";
+import { useNavigate } from "react-router-dom";
+
 const useLoadData = () => {
-  // Simulate data loading with a timeout
-  const [isLoading, setIsLoading] = React.useState(true);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000); // Simulate a 1 second loading time
+    useEffect(()=> {
+        const fetchUser = async () => {
+            try {
+                const { data } = await getUserData();
+                const { _id, name, email, role, schedule } = data.data;
+                dispatch(setUser({ _id, name, email, schedule, role }));
+            } catch (error) {
+                dispatch(removeUser());
+                navigate("/auth");
+                console.log(error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchUser();
+    }, [dispatch,navigate]);
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  return isLoading;
-};
+    return isLoading;
+}
 
 export default useLoadData;
