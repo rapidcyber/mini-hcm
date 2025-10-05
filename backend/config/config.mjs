@@ -1,6 +1,11 @@
 import dotenv from "dotenv";
 import { initializeApp } from 'firebase/app';
 dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -12,8 +17,17 @@ const firebaseConfig = {
   measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
-const config = initializeApp(firebaseConfig);
-config.port = process.env.PORT || 5000;
+const serviceAccountPath = path.resolve(
+  __dirname,
+  process.env.FIREBASE_ADMIN_CREDENTIAL_PATH
+);
 
+const config = {
+  app: initializeApp(firebaseConfig),
+  port: process.env.PORT || 5000,
+  accessTokenSecret: process.env.JWT_SECRET,
+  nodeEnv: process.env.NODE_ENV || "development",
+  firebaseAdminCredentialPath: serviceAccountPath,
+};
 
 export default config;

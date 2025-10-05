@@ -1,28 +1,18 @@
-import config from "./config.mjs";
-import { getFirestore, doc, updateDoc, deleteDoc, collection, getDocs, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import config from './config.mjs';
+import admin from 'firebase-admin';
 
+const serviceAccountPath = config.firebaseAdminCredentialPath;
 
-export const connectDB = () => {
-    try {
-        const db = getFirestore(config);
-        const auth = getAuth(config);
-        console.log("Firebase connected");
-        return {
-          db,
-          auth,
-          doc,
-          setDoc,
-          updateDoc,
-          deleteDoc,
-          collection,
-          getDocs,
-          serverTimestamp,
-        };
-    } catch (error) {
-        console.log("Firebase connection error", error);
-        process.exit(1);
-    }
+if (!serviceAccountPath) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT_PATH environment variable is not set.");
 }
 
-export default connectDB;
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccountPath)
+});
+
+export const db = getFirestore();
+export const auth = getAuth();
+export const adminAuth = admin.auth();

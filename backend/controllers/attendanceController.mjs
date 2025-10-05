@@ -1,17 +1,24 @@
+import { db } from "../config/database.mjs";
+import { doc, query, where, addDoc, deleteDoc, serverTimestamp, getDocs, getDoc, collection, updateDoc } from "firebase/firestore";
 import createHttpError from "http-errors";
-import Attendance from "../models/attendanceModel.mjs";
-import config from "../config/config.mjs";
+import jwt from "jsonwebtoken";
+
 
 export const markAttendance = async (req, res, next) => {
   try {
-    const { userId, type } = req.body;
+    const { userId, timestamp, type } = req.body;
 
-    if (!userId || !type) {
-      throw createHttpError(400, "User ID and type are required");
-    }
+    const userRef = doc(db, "users", userId);
+    
+    await addDoc(collection(db, "attendance"), {
+      userId: userRef,
+      type,
+      timestamp: timestamp || serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
 
-    const result = await Attendance.recordAttendance(userId, type);
-    res.status(200).json(result);
+    res.status(201).json({ message: "Attendance marked successfully" });
   } catch (error) {
     next(error);
   }
@@ -19,14 +26,16 @@ export const markAttendance = async (req, res, next) => {
 
 export const getAttendance = async (req, res, next) => {
   try {
-    const { userId } = req.query;
+    const id = req.params.id;
+    
+  const attendanceDoc = await getDoc(doc(db, "attendance", id));
 
-    if (!userId) {
-      throw createHttpError(400, "User ID is required");
+    if (!attendanceDoc.exists) {
+      return next(createHttpError(404, "Attendance record not found"));
     }
 
-    const attendance = await Attendance.fetchAttendanceByUserId(userId);
-    res.status(200).json(attendance);
+    res.status(200).json({ data: attendanceDoc.data() });
+
   } catch (error) {
     next(error);
   }
@@ -34,8 +43,10 @@ export const getAttendance = async (req, res, next) => {
 
 export const getAllAttendance = async (req, res, next) => {
   try {
-    const attendanceList = await Attendance.fetchAllAttendance();
-    res.status(200).json(attendanceList);
+    const attendanceSnapshot = await getDocs(collection(db, "attendance"));
+    const attendanceRecords = attendanceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    res.status(200).json({ data: attendanceRecords });
   } catch (error) {
     next(error);
   }
@@ -43,15 +54,34 @@ export const getAllAttendance = async (req, res, next) => {
 
 export const updateAttendance = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
     const { type, timestamp } = req.body;
 
-    if (!id) {
-      throw createHttpError(400, "Attendance ID is required");
-    }
+    const attendanceRef = doc(db, "attendance", id);
+    
+    await updateDoc(attendanceRef, {
+      type,
+      timestamp: timestamp ? new Date(timestamp) : serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
 
-    const result = await Attendance.modifyAttendance(id, { type, timestamp });
-    res.status(200).json(result);
+    res.status(200).json({ message: "Attendance updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllAttendanceByUserId = async (req, res, next) => {
+  try {
+    const {accessToken} = req.cookies;
+    const decoded = jwt.decode(accessToken);
+    const userId = decoded.user_id;
+
+    const q = query(collection(db, "attendance"), where("userId", "==", userId));
+    const attendanceSnapshot = await getDocs(q);
+    const attendanceRecords = attendanceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    res.status(200).json({ data: attendanceRecords });
   } catch (error) {
     next(error);
   }
@@ -59,14 +89,11 @@ export const updateAttendance = async (req, res, next) => {
 
 export const deleteAttendance = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
 
-    if (!id) {
-      throw createHttpError(400, "Attendance ID is required");
-    }
+    await deleteDoc(doc(db, "attendance", id));
 
-    const result = await Attendance.removeAttendance(id);
-    res.status(200).json(result);
+    res.status(200).json({ message: "Attendance deleted successfully" });
   } catch (error) {
     next(error);
   }

@@ -1,50 +1,41 @@
-// userController.js
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-import { connectDB  } from "../config/database.mjs";
-import { createUser, getUser, updateUser, getUsers } from "../models/userModel.mjs";
-
-const { db, auth, doc, deleteDoc, getDocs, setDoc, serverTimestamp, getDoc, updateDoc } = connectDB();
-export const register = async (email, password, userData) => {
+import { db, auth, adminAuth } from "../config/database.mjs";
+import { doc, setDoc, serverTimestamp, getDocs, collection, updateDoc, getDoc, deleteDoc, where, query } from "firebase/firestore";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import createHttpError from "http-errors";
+import jwt from "jsonwebtoken";
+export const register = async (req, res, next) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const userId = userCredential.user.uid;
+    const { name, email, password, role, timezone, schedule } = req.body;
 
-    // Save user data in Firestore
-    await createUser(userId, userData);
-    console.log("User registered and data saved!");
-  } catch (error) {
-    console.error("Error registering user:", error);
-  }
-};
+    const userRecord = await createUserWithEmailAndPassword(auth, email, password);
 
-export const loginUser = async (email, password) => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
+    const userData = await setDoc(doc(db, "users", userRecord.user.uid), {
+      name,
       email,
-      password
-    );
-    console.log("User logged in:", userCredential.user);
-    return userCredential.user;
+      role,
+      timezone,
+      schedule,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    res.status(201).json({ message: "User registered successfully", user: userData });
   } catch (error) {
-    console.error("Error logging in user:", error);
+    next(error);
   }
 };
 
 export const getUserData = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const userData = await getUser(userId);
-    res.status(200).json({ data: userData });
+    const userDoc = await getDoc(doc(db, "users", userId));
+
+    if (!userDoc.exists) {
+      return next(createHttpError(404, "User not found"));
+    }
+
+    res.status(200).json({ data: userDoc.data() });
   } catch (error) {
-    console.error("Error fetching user data:", error);
     next(error);
   }
 };
@@ -52,88 +43,112 @@ export const getUserData = async (req, res, next) => {
 export const updateUserData = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const updatedData = req.body;
 
-    // const user = await updateUser(userId, updatedData);
-    // console.log(user);
-    // res.status(200).json({ message: "User data updated!", data: user });
-    res.status(200).json({ id: userId, data: updatedData });
+    const userData = req.body;
+    const updatedUserData = await updateDoc(doc(db, "users", userId), {
+      ...userData,
+      updatedAt: serverTimestamp(),
+    });
+    res.status(200).json({ message: "User updated successfully", user: updatedUserData });
   } catch (error) {
-    console.error("Error updating user data:", error);
     next(error);
   }
 };
 
-export const deleteUser = async (userId) => {
+export const logout = async (req, res) => {
   try {
-    await deleteDoc(doc(db, "users", userId));
-    console.log("User deleted!");
+    await signOut(auth);
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    res.status(200).json({ message: "User logged out successfully" });
   } catch (error) {
-    console.error("Error deleting user:", error);
+    next(error);
   }
 };
 
-export const logoutUser = (req, res) => {   
-  res.clearCookie("accessToken");
-  res.status(200).json({ message: "User logged out successfully" });
-};
-
-export const getAllUsers = async (res, next) => {
+export const getAllUsers = async (req, res, next) => {
   try {
-    const usersList = [];
-    const querySnapshot = await getUsers();
-    querySnapshot.forEach((doc) => {
-      usersList.push({ id: doc.id, ...doc.data() });
-    });
-    res.status(200).json(usersList);
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    res.status(200).json({ data: users });
   } catch (error) {
-    console.error("Error fetching users:", error);
     next(error);
   }
 };
 
 export const login = async (req, res, next) => {
   try {
-      const { email, password } = req.body;
+    const { email, password } = req.body;
+    const userRecord = await signInWithEmailAndPassword(auth, email, password);
 
-      if (!email || !password) {
-          const error = createHttpError(400, 'Email and Password are required');
-          return next(error);
-      }
+    const accessToken = await userRecord.user.getIdToken();
 
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const userId = userCredential.user.uid;
-      const user = await getUser(userId);
+    res.cookie("accessToken", accessToken, {
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
 
-      if (!user) {
-          const error = createHttpError(404, 'User not found');
-          return next(error);
-      }
-
-      // Generate JWT token
-      const accessToken = jwt.sign(
-          { _id: userId, email: user.email, role: user.role },
-          config.accessTokenSecret,
-          { expiresIn: '1h' }
-      );
-
-      // Set token in HTTP-only cookie
-      res.cookie('accessToken', accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 3600000 // 1 hour
-      });
-
-      res.status(200).json({ message: 'Login successful', user: { id: userId, ...user
-      } });
+    res.status(200).json({ message: "User logged in successfully", user: userRecord.user, accessToken });
   } catch (error) {
-      const err = createHttpError(401, 'Invalid Credentials');
-      next(err);
+    next(createHttpError(401, "Invalid email or password"));
   }
 };
+export const deleteUser = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
 
-export const logout = (req, res) => {   
-  res.clearCookie("accessToken");
-  res.status(200).json({ message: "User logged out successfully" });
-};
+    const userRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userRef);
+    
+    const q = query(collection(db, "attendance"), where("userId", "==", userRef));
+    const snapshot = await getDocs(q);
+
+    const deletions = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
+    await Promise.all(deletions);    
+
+    if (!userDoc.exists) {
+      return next(createHttpError(404, "User not found"));
+    }
+
+    await deleteDoc(doc(db, "users", userId));
+    await adminAuth.deleteUser(userId);
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const changePassword = async (req, res, next) => {
+  try {
+
+    const accessToken = req.cookies.accessToken;
+    if (!accessToken) return next(createHttpError(401, "Missing token"));
+
+    const decoded = jwt.decode(accessToken); // no signature verification
+    if (!decoded || !decoded.user_id) return next(createHttpError(401, "Invalid token"));
+
+    const userId = decoded.user_id;
+    const { password } = req.body;
+
+    auth.signOut();
+
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+
+    await adminAuth.updateUser(userId, { password: password });
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -1,31 +1,20 @@
 import createHttpError from "http-errors";
-import jwt from 'jsonwebtoken';
-import config from "../config/config.mjs";
-import { getUser} from "../models/userModel.mjs";
+import jwt from "jsonwebtoken";
 
 const isVerifiedUser = async (req, res, next) => {
     try {
-        const {accessToken} = req.cookies;
+      const token = req.cookies.accessToken;
 
-        if (!accessToken) {
-            const error = createHttpError(401, 'Please provide token');
-            return next(error);
-        }
+      if (!token) return next(createHttpError(401, "Missing token"));
 
-        const decodeToken = jwt.verify(accessToken, config.accessTokenSecret);
-        const user = await getUser(decodeToken._id);
+      const decoded = jwt.decode(token); // no signature verification
 
-        if(!user){
-            const error = createHttpError(401, 'User not exist!');
-            return next(error);
-        }
+      if (!decoded || !decoded.user_id) return next(createHttpError(401, "Invalid token"));
 
-        req.user = user;
-        next();
-
+      req.user = decoded;
+      next();
     } catch (error) {
-        const err = createHttpError(401, 'Invalid Token');
-        next(err);
+        next(error);
     }
 }
 
