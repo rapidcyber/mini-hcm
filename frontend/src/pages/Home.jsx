@@ -20,7 +20,7 @@ const Home = () => {
                 </div>
             </div>
             {/* Right DIV */}
-            <div className='flex-[2] pt-5'>
+            <div className='flex-[2] p-5'>
                 <Activity />
             </div>
             

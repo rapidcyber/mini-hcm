@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import config from "./config/config.mjs";
 import userRoutes from "./routes/userRoutes.mjs";
 import attendanceRoutes from "./routes/attendanceRoutes.mjs";
 import globalErrorHandler from "./middlewares/globalErrorHandler.mjs";
@@ -8,9 +8,16 @@ import cookieParser from "cookie-parser";
 
 
 
-dotenv.config();
+
 const app = express();
-app.use(cors());
+
+app.use(
+  cors({
+    credentials: true,
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  })
+);
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -20,5 +27,16 @@ app.use("/api/attendance", attendanceRoutes);
 //Global Error Handler
 app.use(globalErrorHandler);
 
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`☑️  POS Server listening on port ${PORT}`));
+
+// Basic route
+app.get('/', (req, res) => {
+
+    res.send('Hello, from Mini-HCM Backend Server!');
+});
+
+
+const PORT = config.port || 5000;
+// Start the server
+app.listen(PORT, () => {
+    console.log(`☑️  POS Server listening on port ${PORT}`);
+});

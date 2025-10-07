@@ -1,14 +1,19 @@
-import React, { useEffect} from "react";
+import React, { useEffect, useState } from "react";
 import authImage from "../assets/images/auth.webp"
 import logo from "../assets/react.svg"
-// import viteLogo from '/vite.svg'
 import Login from "../components/auth/Login";
+import Register from "../components/auth/Register";
 
 const Auth = () => {
 
     useEffect(() => {
         document.title = "Mini HCM | Auth"
     }, [])
+
+    const [
+        isRegister,
+        setIsRegister
+    ] = useState(false);
 
     return (
         <div className='flex min-h-screen w-full'>
@@ -31,12 +36,23 @@ const Auth = () => {
                     <img src={logo} className='logo logo-spin react' alt="React Logo" />
                     <div className='text-center'>
                         <h1 className='text-4xl text-[#f5f5f5] tracking-wide'>Mini HCM</h1>
-                        <p className='font-semibold text-[#f5f5f5]'>Business Name</p>
+                        <p className='font-semibold text-[#f5f5f5]'>Time Tracking - Activity</p>
                     </div>
                     <h2 className='text-3xl text-center mt-10 text-yellow-400 mb-10'>
-                        Employee Login
+                        {isRegister ? "Register" : "Login"} Employee
                     </h2>
-                    {/* <Login /> */}
+                    {/* Components */}
+                    {isRegister ? <Register/> : <Login />}
+
+
+                    <div className='flex items-center justify-center mt-6 text-[#ababab]'>
+                        
+                        {isRegister ? "Already" : "Don't"} have an account?&nbsp;
+                        <button onClick={() => setIsRegister(!isRegister)} className='appearance-none! text-yellow-500! bg-transparent! border-0! hover:border-b-2! p-0! rounded-none hover:border-0'>
+                            {isRegister ? "Log in" : "Register"}
+                        </button>
+                        
+                    </div>
                 </div>
             </div>
         </div>

@@ -56,6 +56,14 @@ export const formatTime = (date) => {
   });
 };
 
+export const formatTime24to12 = (time) => {
+  let [hours, minutes] = time.split(":");
+  hours = parseInt(hours, 10);
+  const period = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12; // Convert 0 to 12 for midnight
+  return `${hours}:${minutes} ${period}`;
+}
+
 export const formatDateAndTime = (date) => {
   const dateAndTime = new Date(date).toLocaleString("en-US", {
     month: "long",

@@ -6,7 +6,12 @@ import jwt from "jsonwebtoken";
 
 export const markAttendance = async (req, res, next) => {
   try {
-    const { userId, timestamp, type } = req.body;
+    const { timestamp, type } = req.body;
+
+    const accessToken = req.cookies.accessToken;
+
+    const decoded = jwt.decode(accessToken);
+    const userId = decoded.user_id;
 
     const userRef = doc(db, "users", userId);
     
@@ -19,6 +24,28 @@ export const markAttendance = async (req, res, next) => {
     });
 
     res.status(201).json({ message: "Attendance marked successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMyAttendance = async (req, res, next) => {
+  try {
+    const accessToken = req.cookies.accessToken;
+
+    const decoded = jwt.decode(accessToken);
+    const userId = decoded.user_id;
+
+    const q = query(collection(db, "attendance"), where("userId", "==", doc(db, "users", userId)));
+    const snapshot = await getDocs(q);
+
+    const attendanceRecords = snapshot.docs.map(doc => ({ id: doc.id, timestamp: doc.data().timestamp.toDate(), type: doc.data().type, createdAt: doc.data().createdAt.toDate(), updatedAt: doc.data().updatedAt.toDate() }));
+
+    res
+      .status(200)
+      .json({
+        data: attendanceRecords.sort((a, b) => b.timestamp - a.timestamp),
+      });
   } catch (error) {
     next(error);
   }
@@ -44,9 +71,16 @@ export const getAttendance = async (req, res, next) => {
 export const getAllAttendance = async (req, res, next) => {
   try {
     const attendanceSnapshot = await getDocs(collection(db, "attendance"));
-    const attendanceRecords = attendanceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const attendanceRecords = attendanceSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      userId: doc.data().userId.id,
+      type: doc.data().type,
+      timestamp: doc.data().timestamp.toDate(),
+      createdAt: doc.data().createdAt.toDate(),
+      updatedAt: doc.data().updatedAt.toDate(),
+    }));
 
-    res.status(200).json({ data: attendanceRecords });
+    res.status(200).json({ data: attendanceRecords.sort((a, b) => b.timestamp - a.timestamp) });
   } catch (error) {
     next(error);
   }
@@ -66,22 +100,6 @@ export const updateAttendance = async (req, res, next) => {
     });
 
     res.status(200).json({ message: "Attendance updated successfully" });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getAllAttendanceByUserId = async (req, res, next) => {
-  try {
-    const {accessToken} = req.cookies;
-    const decoded = jwt.decode(accessToken);
-    const userId = decoded.user_id;
-
-    const q = query(collection(db, "attendance"), where("userId", "==", userId));
-    const attendanceSnapshot = await getDocs(q);
-    const attendanceRecords = attendanceSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    res.status(200).json({ data: attendanceRecords });
   } catch (error) {
     next(error);
   }

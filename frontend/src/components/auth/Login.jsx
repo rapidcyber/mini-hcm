@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-// import { useMutation } from "@tanstack/react-query"
-// import { login } from ',,/https';
-// import { enqueueSnackbar } from "notistack";
-// import { useDispatch } from "react-redux";
-// import { setUser } from "../../redux/slices/userSlice";
-// import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query"
+import { login } from "../../https";
+import { enqueueSnackbar } from "notistack";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../redux/slices/userSlice";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
 
-    // const navigate = useNavigate();
-    // const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
 
 
     
@@ -18,29 +18,30 @@ const Login = () => {
         password: "",
     });
 
-    const handleSubmit = () => {
+    const handleSubmit = (e) => {
+        e.preventDefault();
         console.log('Logged in');
-        // loginMutation.mutate(formData);
+        loginMutation.mutate(formData);
     }
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     }
 
-    // const loginMutation = useMutation({
-    //     mutationFn: (reqData) => login(reqData),
-    //     onSuccess: (res) => {
-    //         const { data } = res;
-    //         const { _id, name, email, schedule, role } = data;
+    const loginMutation = useMutation({
+        mutationFn: (reqData) => login(reqData),
+        onSuccess: (res) => {
+            const { data } = res;
+            const { id, email } = data;
             
-    //         dispatch(setUser({ _id, name, email, schedule, role }));
-    //         navigate("/");
-    //     },
-    //     onError: (error) => {
-    //         const { response } = error;
-    //         enqueueSnackbar(response.data.message, { variant: "error" });
-    //     }
-    // })
+            dispatch(setUser({ id, email }));
+            navigate("/");
+        },
+        onError: (error) => {
+            const { response } = error;
+            enqueueSnackbar(response.data.message, { variant: "error" });
+        }
+    })
     return (
         <div className="w-full">
             <form onSubmit={handleSubmit}>

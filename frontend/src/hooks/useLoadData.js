@@ -13,8 +13,8 @@ const useLoadData = () => {
         const fetchUser = async () => {
             try {
                 const { data } = await getUserData();
-                const { _id, name, email, role, schedule } = data.data;
-                dispatch(setUser({ _id, name, email, schedule, role }));
+                const { id, name, email, role, timezone, schedule } = data.data;
+                dispatch(setUser({ id, name, email, timezone, schedule, role }));
             } catch (error) {
                 dispatch(removeUser());
                 navigate("/auth");

@@ -25,7 +25,69 @@ export const register = async (req, res, next) => {
   }
 };
 
+export const login = async (req, res, next) => {
+  try {
+
+    const { email, password } = req.body;
+
+    const userRecord = await signInWithEmailAndPassword(auth, email, password);
+
+    const accessToken = await userRecord.user.getIdToken();
+
+    if (!accessToken) {
+      return next(createHttpError(401, "Invalid email or password"));
+    }
+
+    res.cookie("accessToken", accessToken, {
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+
+    const user = {
+      id: userRecord.user.uid,
+      email: userRecord.user.email,
+    };
+
+    res.status(200).json({
+      message: "User logged in successfully",
+      data: user,
+      accessToken,
+    });
+  } catch (error) {
+    next(createHttpError(401, "Invalid email or password"));
+  }
+};
 export const getUserData = async (req, res, next) => {
+  try {
+    
+    const {accessToken} = req.cookies;
+    const decoded = jwt.decode(accessToken);
+    const userId = decoded.user_id;
+    
+    const userDoc = await getDoc(doc(db, "users", userId));
+
+    if (!userDoc.exists) {
+      return next(createHttpError(404, "User not found"));
+    }
+    const data = userDoc.data();
+    const userData = {
+      id: userId,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      timezone: data.timezone,
+      schedule: data.schedule,
+    };
+
+    res.status(200).json({ data: userData });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserById = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const userDoc = await getDoc(doc(db, "users", userId));
@@ -39,6 +101,7 @@ export const getUserData = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const updateUserData = async (req, res, next) => {
   try {
@@ -80,25 +143,7 @@ export const getAllUsers = async (req, res, next) => {
   }
 };
 
-export const login = async (req, res, next) => {
-  try {
-    const { email, password } = req.body;
-    const userRecord = await signInWithEmailAndPassword(auth, email, password);
 
-    const accessToken = await userRecord.user.getIdToken();
-
-    res.cookie("accessToken", accessToken, {
-      maxAge: 1000 * 60 * 60 * 24 * 30,
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-    });
-
-    res.status(200).json({ message: "User logged in successfully", user: userRecord.user, accessToken });
-  } catch (error) {
-    next(createHttpError(401, "Invalid email or password"));
-  }
-};
 export const deleteUser = async (req, res, next) => {
   try {
     const userId = req.params.id;

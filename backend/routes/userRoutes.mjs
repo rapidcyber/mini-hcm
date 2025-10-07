@@ -1,7 +1,8 @@
 import express from "express";
 import { 
     getAllUsers, 
-    getUserData, 
+    getUserData,
+    getUserById, 
     updateUserData, 
     deleteUser, 
     register, 
@@ -21,7 +22,8 @@ router.route("/logout").post(isVerifiedUser, logout);
 router.route("/change-password").patch(isVerifiedUser, changePassword);
 // User Routes
 router.route("/all").get(isVerifiedUser, getAllUsers);
-router.route("/:id").get(isVerifiedUser, getUserData);
+router.route("/:id").get(isVerifiedUser, getUserById);
+router.route("/").get(isVerifiedUser, getUserData);
 router.route("/:id").put(isVerifiedUser, updateUserData);
 router.route("/:id").delete(isAdmin, deleteUser);
 

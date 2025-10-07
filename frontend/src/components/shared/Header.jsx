@@ -44,14 +44,15 @@ const Header = () => {
 
             {/* LOGGED USER DETAILS */}
             <div className="flex items-center gap-4">
-                {userData.role === "Admin" && (
-                    <div onClick={() => navigate("/dashboard")} className="bg-[#1f1f1f] rounded-[15px] p-3 cursor-pointer">
-                        <MdDashboard className="text-[#f5f5f5] text-2xl" />
+                {userData.role && (
+                    <div onClick={() => navigate("/dashboard")} className="bg-[#1f1f1f] hover:bg-[#1a1a1a] hover:border flex items-center gap-2 rounded-[15px] p-3 cursor-pointer">
+                        <MdDashboard className="text-[#f5f5f5] text-2xl" /> 
+                        <span className="text-[#f5f5f5]">Admin Dasboard</span>
                     </div>
                 )}
-                <div className="bg-[#1f1f1f] rounded-[15px] p-3 cursor-pointer">
+                {/* <div className="bg-[#1f1f1f] rounded-[15px] p-3 cursor-pointer">
                     <FaBell className="text-[#f5f5f5] text-2xl" />
-                </div>
+                </div> */}
                 <div className="flex items-center gap-3 cursor-pointer">
                     <FaUserCircle className="text-[#f5f5f5] text-4xl" />
                     <div className="flex flex-col items-start">
