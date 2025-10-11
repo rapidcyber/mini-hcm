@@ -12,13 +12,14 @@ const Register = () => {
         type: "",
         role: false,
         timezone: "Asia/Manila",
-        scheduleStart: null,
-        scheduleEnd: null
+        scheduleStart: "9:00",
+        scheduleEnd: "18:00"
     });
 
     const navigate = useNavigate();
 
     const handleChange = (e) => {
+        console.log(e.target.value);
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
@@ -53,7 +54,7 @@ const Register = () => {
         mutationFn: (reqData) => register(reqData),
         onSuccess: (data) => {
             console.log(data);
-            enqueueSnackbar(data.data.message, { variant: "success" });
+            enqueueSnackbar("User registered successfully!", { variant: "success" });
             navigate("/");
         },
         onError: (error) => {

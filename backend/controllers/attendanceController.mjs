@@ -1,5 +1,17 @@
 import { db } from "../config/database.mjs";
-import { doc, query, where, addDoc, deleteDoc, serverTimestamp, getDocs, getDoc, collection, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  query,
+  where,
+  addDoc,
+  deleteDoc,
+  serverTimestamp,
+  getDocs,
+  getDoc,
+  collection,
+  updateDoc,
+  Timestamp,
+} from "firebase/firestore";
 import createHttpError from "http-errors";
 import jwt from "jsonwebtoken";
 
@@ -44,7 +56,7 @@ export const getMyAttendance = async (req, res, next) => {
     res
       .status(200)
       .json({
-        data: attendanceRecords.sort((a, b) => b.timestamp - a.timestamp),
+        data: attendanceRecords ? attendanceRecords.sort((a, b) => b.timestamp - a.timestamp) : [],
       });
   } catch (error) {
     next(error);
@@ -86,6 +98,28 @@ export const getAllAttendance = async (req, res, next) => {
   }
 };
 
+export const getPunchesByUserId = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const q = query(
+      collection(db, "attendance"),
+      where("userId", "==", doc(db, "users", userId))
+    );
+    return getDocs(q).then((snapshot) => {
+      const attendanceRecords = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        type: doc.data().type,
+        timestamp: doc.data().timestamp.toDate(),
+        createdAt: doc.data().createdAt.toDate(),
+        updatedAt: doc.data().updatedAt.toDate(),
+      }));
+      res.status(200).json({ data: attendanceRecords });
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const updateAttendance = async (req, res, next) => {
   try {
     const id = req.params.id;
@@ -99,7 +133,7 @@ export const updateAttendance = async (req, res, next) => {
       updatedAt: serverTimestamp(),
     });
 
-    res.status(200).json({ message: "Attendance updated successfully" });
+    res.status(200).json({ message: "Attendance updated successfully", data: { id, type, timestamp } });
   } catch (error) {
     next(error);
   }

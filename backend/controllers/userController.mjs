@@ -108,8 +108,15 @@ export const updateUserData = async (req, res, next) => {
     const userId = req.params.id;
 
     const userData = req.body;
+    
     const updatedUserData = await updateDoc(doc(db, "users", userId), {
-      ...userData,
+      role: userData.role ? true: false,
+      timezone: userData.timezone,
+      name: userData.name,
+      schedule: {
+        start: userData.scheduleStart,
+        end: userData.scheduleEnd
+      },
       updatedAt: serverTimestamp(),
     });
     res.status(200).json({ message: "User updated successfully", user: updatedUserData });

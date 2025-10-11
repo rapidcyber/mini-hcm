@@ -22,8 +22,14 @@ const serviceAccountPath = path.resolve(
   process.env.FIREBASE_ADMIN_CREDENTIAL_PATH
 );
 
+const app = initializeApp(firebaseConfig);
+
+if ( app ) {
+  console.log("☑️  Firebase initialized");
+}
+
 const config = {
-  app: initializeApp(firebaseConfig),
+  app: app,
   port: process.env.PORT || 5000,
   accessTokenSecret: process.env.JWT_SECRET,
   nodeEnv: process.env.NODE_ENV || "development",

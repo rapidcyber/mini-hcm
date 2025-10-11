@@ -17,7 +17,8 @@ export const changePassword = (data) =>
 export const deleteUser = (userId) =>
   axiosWrapper.delete(`/api/user/${userId}`);
 export const deleteAttendance = (id) =>
-  axiosWrapper.delete(`/api/attendance/${id}`);
+  axiosWrapper.delete(`/api/attendance/delete/${id}`);
+export const getPunchesByUserId = (id) => axiosWrapper.get(`/api/attendance/user/${id}`);
 
 // Attendance Endpoints
 export const getAttendance = (id) => axiosWrapper.get(`/api/attendance/${id}`);

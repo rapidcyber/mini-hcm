@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MdTableBar, MdCategory } from "react-icons/md";
 import Users from "../components/dashboard/Users";
 import Activities from "../components/dashboard/Activities";
@@ -17,7 +17,7 @@ const Dashboard = () => {
     document.title = "POS | Admin Dashboard"
   }, [])
 
-  const [activeTab, setActiveTab] = useState("Activities");
+  const [activeTab, setActiveTab] = useState("Users");
 
 
   return (
@@ -43,8 +43,8 @@ const Dashboard = () => {
           })}
         </div>
       </div>
-      {activeTab === "Users" && <Users />}
-      {activeTab === "Activities" && <Activities />}
+      { activeTab === "Users" && <Users />}
+      { activeTab === "Activities" && <Activities />}
     </div>
   );
 };

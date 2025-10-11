@@ -99,3 +99,13 @@ export const slugify = (text) => {
     .replace(/[^\w-]+/g, "") // Remove all non-word chars
     .replace(/--+/g, "-"); // Replace multiple - with single -
 };
+
+export const formatMinutesToHHMM = (totalMinutes) => {
+  
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = Math.floor(totalMinutes % 60);
+  return totalMinutes === 0 ? "00:00" : `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}`;
+}

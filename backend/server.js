@@ -6,9 +6,6 @@ import attendanceRoutes from "./routes/attendanceRoutes.mjs";
 import globalErrorHandler from "./middlewares/globalErrorHandler.mjs";
 import cookieParser from "cookie-parser";
 
-
-
-
 const app = express();
 
 app.use(

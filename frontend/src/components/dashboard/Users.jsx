@@ -1,17 +1,12 @@
 import React, { useState } from "react";
-import { getUsers, updateUser, deleteUser, register} from "../../https";
+import { getUsers, updateUser, deleteUser } from "../../https";
 import { keepPreviousData,useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
 import Modal from "../shared/Modal";
 import { formatTime24to12 } from "../../utils";
+import { DateTime, Interval } from "luxon";
 
-/**
- * Users
- *
- * A React component to display the users.
- *
- * @returns {React.ReactElement} The component.
- */
+
 const Users = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,15 +43,18 @@ const Users = () => {
 
     const updateUserMutation = useMutation({
         mutationFn: async (user) => {
-            if(!user._id) {
-                return await register(user);
+            user.userId = user.id;
+            user.scheduleStart = user.schedule.start;
+            user.scheduleEnd = user.schedule.end;
+            if(user.role === 0) {
+                user.role = false;
             }
-            user.userId = user._id;
             return await updateUser(user);
         },
+
         onSuccess: () => {
             queryClient.invalidateQueries(["users"]);
-            enqueueSnackbar(!selectedUser._id ? "User registered successfully!" : "User updated successfully!", { variant: "success" });
+            enqueueSnackbar("User updated successfully!", { variant: "success" });
             handleCloseModal();
         },
         onError: (error) => {
@@ -67,13 +65,20 @@ const Users = () => {
         }
     });
 
-    const handleDeleteUser = async (id) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
-            await deleteUser(id);
+    const handleDeleteUser = async (user) => {
+        if (window.confirm("Are you sure you want to delete this user? All data will be lost.")) {
+            
+            await deleteUser(user.id);
             queryClient.invalidateQueries(["users"]);
             enqueueSnackbar("User deleted successfully!", { variant: "success" });
         }
-    }   
+    }
+    const handleCheckboxChange = (e) => {
+        setSelectedUser({
+            ...selectedUser,
+            [e.target.name]: e.target.checked
+        });
+    }
 
     return (
         <div className="container mx-auto py-2 px-6 md:px-4">
@@ -83,7 +88,7 @@ const Users = () => {
                         Users
                     </h2>
                     <p className="text-sm text-[#ababab]">
-                        Update and delete users
+                        Update and delete users.
                     </p>
                 </div>
             </div>
@@ -92,27 +97,33 @@ const Users = () => {
                     <thead className="bg-[#333] text-[#ababab]">
                         <tr>
                             <th className="p-3">Name</th>
-                            <th className="p-3">Role</th>
+                            <th className="p-3">Rsession.in.toJSDaole</th>
+                            <th className="p-3">Timezone</th>
                             <th className="p-3">Schedule</th>
-                            <th className="p-3 w-[200px]">Actions</th>
+                            <th className="p-3 w-[250px]">Summary</th>
                         </tr>
                     </thead>
                     <tbody>
                         {resData?.data.data.map((user, index) => (
                             <tr
                                 key={index}
-                                className="border-b border-gray-600 hover:bg-[#333]"
+                                className="border-b border-gray-600 hover:bg-[#333]/50"
                             >
                                 <td className="p-3">{user.name}</td>
                                 <td className="p-3">{user.role ? 'Admin' : 'Employee'}</td>
-                                <td className="p-3">{formatTime24to12(user.schedule.start)} - {formatTime24to12(user.schedule.end)}</td>
+                                <td className="p-3">{user.timezone}</td>
+                                <td className="p-3">
+                                    {formatTime24to12(user.schedule.start)} - {formatTime24to12(user.schedule.end)}
+                                </td>
                                 <td className="p-3 flex gap-2">
-                                    <button onClick={()=> handleOpenModal(user)} className="px-4 py-2 focus:text-[#f5f5f5] hover:bg-[#262626] rounded-md text-[#f5f5f5] bg-[#1a1a1a]!">
+                                    {/* <button onClick={()=> handleOpenModal(user)} className="hover:text-[#e6ff01]!">
                                         Edit
                                     </button>
-                                    <button onClick={() => handleDeleteUser(user._id)} className="px-4 py-2 focus:text-red-500 hover:bg-[#262626] rounded-md text-[#f5f5f5] bg-[#1a1a1a]!">
+                                    <button onClick={() => handleDeleteUser(user.id)} className="hover:text-[#e6ff01]!">
                                         Delete
-                                    </button>
+                                    </button> */}
+                                    <button onClick={()=> handleOpenModal(user)} className="hover:text-[#e6ff01]!">Edit</button>
+                                    <button onClick={()=> handleDeleteUser(user)} className="hover:text-[#e6ff01]!">Delete</button>
                                 </td>
                             </tr>
                         ))}
@@ -136,7 +147,7 @@ const Users = () => {
                             />
                         </div>
                     </div>
-                    <div>
+                    {/* <div>
                         <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium" htmlFor="email">Email</label>
                         <div className="flex item-center rounded-lg py-4 px-5 bg-[#1f1f1f]">
                             <input
@@ -150,18 +161,24 @@ const Users = () => {
                                 required
                                 />
                         </div>
-                    </div>
+                    </div> */}
                     <div>
-                        <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium" htmlFor="phone">Phone Number</label>
+                        <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium" htmlFor="phone">Timezone</label>
                         <div className="flex item-center rounded-lg py-4 px-5 bg-[#1f1f1f]">
-                            <input type="number" id="phone" name="phone" 
-                                placeholder="Enter employee phone number"
-                                defaultValue={selectedUser ? selectedUser.phone : ""}
-                                onChange={(e) => setSelectedUser({ ...selectedUser, phone: e.target.value })}
+                            <input type="text" list="timezones" id="timezone" name="timezone" 
+                                placeholder="Asia/Manila"
+                                defaultValue={selectedUser ? selectedUser.timezone : ""}
+                                onChange={(e) => setSelectedUser({ ...selectedUser, timezone: e.target.value })}
                                 required className="bg-transparent flex-1 text-white focus:outline-none" />
+                            <datalist id="timezones">
+                                <option value="Asia/Manila">Asia/Manila</option>
+                                <option value="America/New_York">America/New_York</option>
+                                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                                <option value="Europe/London">Europe/London</option>
+                            </datalist>
                         </div>
                     </div>
-                    <div>
+                    {/* <div>
                         <label 
                             className="block text-[#ababab] mb-2 mt-3 text-sm font-medium"
                             htmlFor="password">Password</label>
@@ -172,25 +189,46 @@ const Users = () => {
                                 placeholder="Enter employee password"
                                 />
                         </div>
-                    </div>
+                    </div> */}
                     <div>
-                        <label
-                            className="block text-[#ababab] mb-2 mt-3 text-sm font-medium" htmlFor="role">Role</label>
-                        <select 
-                            name="role" id="role"
-                            value={selectedUser ? selectedUser.role : ""}
-                            className="flex item-center rounded-lg py-4 px-5 bg-[#1f1f1f] text-white focus:outline-none border-transparent border-r-10"
-                            onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value })}
-                            required>
-                            <option value="">Select Role</option>
-                            <option value="admin">Admin</option>
-                            <option value="cashier">Cashier</option>
-                            <option value="kitchen">Kitchen Staff</option>
-                        </select>
-                    </div>    
-                    
+                        <label className="flex items-center gap-2 text-[#ababab] mb-2 mt-3 text-sm font-medium">
+                            <input
+                                id="role"
+                                type="checkbox"
+                                name="role"
+                                checked={selectedUser ? selectedUser.role : false}
+                                onChange={handleCheckboxChange}
+                                className="w-4 h-4"
+                            />
+                            Admin Role
+                        </label>
+                    </div>
+
+ 
+                    <div className="flex gap-3">
+                        <div>
+                            <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium" htmlFor="scheduleStart">Schedule Start</label>
+                            <div className="flex item-center rounded-lg py-4 px-5 bg-[#1f1f1f]">
+                                <input type="time" id="scheduleStart" name="scheduleStart"
+                                    defaultValue={selectedUser ? selectedUser.schedule.start : ""}
+                                    className="bg-transparent flex-1 text-white focus:outline-none"
+                                    onChange={(e) => setSelectedUser({ ...selectedUser, scheduleStart: e.target.value })}
+                                    />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-[#ababab] mb-2 mt-3 text-sm font-medium" htmlFor="scheduleEnd">Schedule End</label>
+                            <div className="flex item-center rounded-lg py-4 px-5 bg-[#1f1f1f]">
+                                <input type="time" id="scheduleEnd" name="scheduleEnd"
+                                    defaultValue={selectedUser ? selectedUser.schedule.end : ""}
+                                    className="bg-transparent flex-1 text-white focus:outline-none"
+                                    onChange={(e) => setSelectedUser({ ...selectedUser, scheduleEnd: e.target.value })}
+                                    />
+                            </div>
+                        </div>
+                    </div>
                     <button type="submit"
-                        className="w-full bg-[#F6B100] text-gray-900 hover:text-[#f5f5f5] rounded-lg py-3 mt-8 hover:bg-yellow-700">Submit</button>
+                        className="w-full bg-[#F6B100]! text-gray-900 hover:text-[#f5f5f5] rounded-lg py-3 mt-8 hover:bg-yellow-700">Submit</button>
                 </form>
             </Modal>
         </div>

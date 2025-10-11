@@ -6,8 +6,8 @@ import {
   updateAttendance,
   getAllAttendance,
   deleteAttendance,
-  getMyAttendance
-
+  getMyAttendance,
+  getPunchesByUserId,
 } from "../controllers/attendanceController.mjs";
 import isAdmin from "../middlewares/adminVerification.mjs";
 
@@ -20,5 +20,6 @@ router.route("/:id").get( isVerifiedUser, getAttendance);
 router.route("/:id").put( isAdmin,updateAttendance);
 router.route("/me/all").get(isVerifiedUser,getMyAttendance);
 router.route("/delete/:id").delete(isAdmin,deleteAttendance);
+router.route("/user/:id").get(isVerifiedUser, getPunchesByUserId);
 
 export default router;
