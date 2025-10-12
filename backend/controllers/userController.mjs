@@ -1,13 +1,32 @@
 import { db, auth, adminAuth } from "../config/database.mjs";
-import { doc, setDoc, serverTimestamp, getDocs, collection, updateDoc, getDoc, deleteDoc, where, query } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  getDocs,
+  collection,
+  updateDoc,
+  getDoc,
+  deleteDoc,
+  where,
+  query,
+} from "firebase/firestore";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
 import createHttpError from "http-errors";
 import jwt from "jsonwebtoken";
 export const register = async (req, res, next) => {
   try {
     const { name, email, password, role, timezone, schedule } = req.body;
 
-    const userRecord = await createUserWithEmailAndPassword(auth, email, password);
+    const userRecord = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
     const userData = await setDoc(doc(db, "users", userRecord.user.uid), {
       name,
@@ -19,7 +38,9 @@ export const register = async (req, res, next) => {
       updatedAt: serverTimestamp(),
     });
 
-    res.status(201).json({ message: "User registered successfully", user: userData });
+    res
+      .status(201)
+      .json({ message: "User registered successfully", user: userData });
   } catch (error) {
     next(error);
   }
@@ -27,7 +48,6 @@ export const register = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-
     const { email, password } = req.body;
 
     const userRecord = await signInWithEmailAndPassword(auth, email, password);
@@ -61,11 +81,10 @@ export const login = async (req, res, next) => {
 };
 export const getUserData = async (req, res, next) => {
   try {
-    
-    const {accessToken} = req.cookies;
+    const { accessToken } = req.cookies;
     const decoded = jwt.decode(accessToken);
     const userId = decoded.user_id;
-    
+
     const userDoc = await getDoc(doc(db, "users", userId));
 
     if (!userDoc.exists) {
@@ -102,24 +121,25 @@ export const getUserById = async (req, res, next) => {
   }
 };
 
-
 export const updateUserData = async (req, res, next) => {
   try {
     const userId = req.params.id;
 
     const userData = req.body;
-    
+
     const updatedUserData = await updateDoc(doc(db, "users", userId), {
-      role: userData.role ? true: false,
+      role: userData.role ? true : false,
       timezone: userData.timezone,
       name: userData.name,
       schedule: {
         start: userData.scheduleStart,
-        end: userData.scheduleEnd
+        end: userData.scheduleEnd,
       },
       updatedAt: serverTimestamp(),
     });
-    res.status(200).json({ message: "User updated successfully", user: updatedUserData });
+    res
+      .status(200)
+      .json({ message: "User updated successfully", user: updatedUserData });
   } catch (error) {
     next(error);
   }
@@ -142,7 +162,10 @@ export const logout = async (req, res) => {
 export const getAllUsers = async (req, res, next) => {
   try {
     const usersSnapshot = await getDocs(collection(db, "users"));
-    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const users = usersSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
     res.status(200).json({ data: users });
   } catch (error) {
@@ -150,19 +173,21 @@ export const getAllUsers = async (req, res, next) => {
   }
 };
 
-
 export const deleteUser = async (req, res, next) => {
   try {
     const userId = req.params.id;
 
     const userRef = doc(db, "users", userId);
     const userDoc = await getDoc(userRef);
-    
-    const q = query(collection(db, "attendance"), where("userId", "==", userRef));
+
+    const q = query(
+      collection(db, "attendance"),
+      where("userId", "==", userRef)
+    );
     const snapshot = await getDocs(q);
 
     const deletions = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
-    await Promise.all(deletions);    
+    await Promise.all(deletions);
 
     if (!userDoc.exists) {
       return next(createHttpError(404, "User not found"));
@@ -175,16 +200,16 @@ export const deleteUser = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-}
+};
 
 export const changePassword = async (req, res, next) => {
   try {
-
     const accessToken = req.cookies.accessToken;
     if (!accessToken) return next(createHttpError(401, "Missing token"));
 
     const decoded = jwt.decode(accessToken); // no signature verification
-    if (!decoded || !decoded.user_id) return next(createHttpError(401, "Invalid token"));
+    if (!decoded || !decoded.user_id)
+      return next(createHttpError(401, "Invalid token"));
 
     const userId = decoded.user_id;
     const { password } = req.body;
@@ -203,4 +228,4 @@ export const changePassword = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-}
+};
