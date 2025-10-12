@@ -3,7 +3,7 @@ import { getAllAttendance, getUsers, updateAttendance, deleteAttendance } from "
 import { useQuery, keepPreviousData, useQueryClient, useMutation } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
 import { formatDateAndTime, formatMinutesToHHMM } from "../../utils";
-import { Interval, DateTime } from "luxon";
+import { DateTime } from "luxon";
 import { getDailySummaryPerUser } from "../../utils/getDailySummaryPerUser";
 import { getWeeklySummaryPerUser } from "../../utils/getWeeklySummaryPerUser";
 import Modal from "../shared/Modal";
