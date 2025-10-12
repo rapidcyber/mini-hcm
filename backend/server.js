@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 });
 
 
-const PORT = config.port || 8002;
+const PORT = process.env.PORT || config.port || 8002;
 // Start the server
 app.listen(PORT, () => {
     console.log(`☑️  POS Server listening on port ${PORT}`);
