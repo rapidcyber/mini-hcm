@@ -34,6 +34,7 @@ const config = {
   accessTokenSecret: process.env.JWT_SECRET,
   nodeEnv: process.env.NODE_ENV || "development",
   firebaseAdminCredentialPath: serviceAccountPath,
+  frontendUrl: process.env.FRONTEND_URL
 };
 
 export default config;
