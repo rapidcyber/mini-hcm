@@ -10,11 +10,13 @@ A boilerplate for a React application with React Query, Tailwind CSS, and Notist
 - Notistack for notifications
 
 ## Getting Started
-
 1. Clone the repository
-2. Run `npm install` to install the dependencies
-3. Run `npm start` to start the development server
-4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application in action
+2. Go to backend directory then Run `npm install` to install the dependencies
+3. If your running a freshly created database, run `node seeder.js` to create the first admin user.
+4. Run `npm start` or `npm run dev` to start the backend server
+5. Go to frontend directory then run `npm install` to install the dependencies.
+6. Run `npm run dev` to start the frontend server.
+7. Open [http://localhost:5173](http://localhost:5173) in your browser to see the application in action
 
 ## Scripts
 
