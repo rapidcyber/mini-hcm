@@ -8,7 +8,7 @@ import {
   deleteAttendance,
   getMyAttendance,
   getPunchesByUserId,
-} from "../controllers/attendanceController.mjs";
+} from "../controllers/AttendanceController.mjs";
 import isAdmin from "../middlewares/adminVerification.mjs";
 
 const router = express.Router();
