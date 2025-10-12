@@ -4,6 +4,8 @@ import { useQuery, keepPreviousData, useQueryClient, useMutation } from "@tansta
 import { enqueueSnackbar } from "notistack";
 import { formatDateAndTime, formatMinutesToHHMM } from "../../utils";
 import { Interval, DateTime } from "luxon";
+import { getDailySummaryPerUser } from "../../utils/getDailySummaryPerUser";
+import { getWeeklySummaryPerUser } from "../../utils/getWeeklySummaryPerUser";
 import Modal from "../shared/Modal";
 
 const Activities = () => {
@@ -80,141 +82,10 @@ const Activities = () => {
         }
     }
 
-    
-
-    const getDailySummaryPerUser = (user) => {
-        const userAttendance = attendance?.data.data.filter((attendance) => attendance.userId === user.id);
-
-        // Step 1: Sort by timestamp
-        const sorted = userAttendance ? userAttendance?.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) : [];
-        
-        // Step 2: Pair in/out sessions
-        const pairedSessions = [];
-        for (let i = 0; i < sorted.length - 1; i++) {
-            if (sorted[i].type === "in" && sorted[i + 1].type === "out") {
-                pairedSessions.push({           
-                in: DateTime.fromISO(sorted[i].timestamp),
-                out: DateTime.fromISO(sorted[i + 1].timestamp)
-                });
-                i++; // skip next since it's already paired
-            }
-        }
-
-        let summary = [];
-        
-        if(user) {
-            const grouped = [];            
-            const sessions = pairedSessions.map((session) => {
-                const date = session.in.toFormat("yyyy-MM-dd");
-                const shiftStart = DateTime.fromFormat(`${date} ${user.schedule.start}`, "yyyy-MM-dd HH:mm", { zone: "Asia/Manila" });
-                return {
-                    date: shiftStart.toJSDate(),
-                    in: session.in,
-                    out: session.out,
-                }
-            });
-    
-            sessions.forEach(entry => {
-                const dateKey = DateTime.fromISO(entry.in).toFormat("yyyy-MM-dd");
-                if (!grouped[dateKey]) grouped[dateKey] = [];
-                grouped[dateKey].push(entry);
-            });
-    
-            summary = Object.entries(grouped).map(([date, entries]) => {
-                const totalDuration = entries.reduce((total, entry) => {
-                    const duration = entry.out.diff(entry.in, ["hours", "minutes", "seconds"]).toObject();
-                    // return duration;
-                    return total + duration.hours * 60 + duration.minutes;
-                }, 0);
-                
-                const shiftStart = DateTime.fromFormat(`${date} ${user.schedule.start}`, "yyyy-MM-dd HH:mm", { zone: "Asia/Manila" });
-                let shiftEnd = DateTime.fromFormat(`${date} ${user.schedule.end}`, "yyyy-MM-dd HH:mm", { zone: "Asia/Manila" });
-                if (shiftEnd < shiftStart) {
-                    shiftEnd = shiftEnd.plus({ days: 1 });
-                }
-                const firstIn = entries[0].in;
-                const lastOut = entries[entries.length - 1].out;
-                const Hourslate = firstIn.diff(shiftStart, ["hours", "minutes", "seconds"]).toObject();
-                const Undertime = shiftEnd.diff(lastOut, ["hours", "minutes", "seconds"]).toObject();
-                const OverTime = lastOut.diff(shiftEnd, ["hours", "minutes", "seconds"]).toObject();
-                const nightStart = shiftStart.set({ hour: 22, minute: 0 });
-                const nightEnd = shiftStart.plus({ days: 1 }).set({ hour: 6, minute: 0 });
-
-                //compute night differencial
-                const nightDuration = entries.reduce((total, entry) => {
-                    const overlap = Interval.fromDateTimes(entry.in, entry.out).intersection(
-                        Interval.fromDateTimes(nightStart, nightEnd)
-                    );
-                    if (overlap) {
-                        return total + overlap.length("minutes");
-                    }
-                    return total;
-                }, 0);
-                
-                return {
-                    date,
-                    workedHours: Math.max(0, totalDuration),
-                    undertime: Math.max(0, Undertime.hours * 60 + Undertime.minutes),
-                    late: Math.max(0, Hourslate.hours * 60 + Hourslate.minutes),
-                    overtime: Math.max(0, OverTime. hours * 60 + OverTime.minutes),
-                    nightDifferential: Math.max(0, nightDuration),    
-                };
-            });
-        }
-
-        return summary;
-    }
-
-    const getWeeklySummaryPerUser = (user) => {
-        const dailySummary = getDailySummaryPerUser(user);
-        
-
-        const groupedByWeek = dailySummary.reduce((acc, entry) => {
-            const weekStart = DateTime.fromISO(entry.date).startOf("week").toFormat("yyyy-MM-dd");
-            if (!acc[weekStart]) acc[weekStart] = [];
-            acc[weekStart].push(entry);
-            return acc;
-        }, {});
-
-        console.log(groupedByWeek);
-
-        return Object.entries(groupedByWeek).map(([weekStart, days]) => {
-            const totals = days.reduce(
-            (sum, day) => {
-                const worked = day.workedHours;
-                const late = day.late;
-                const undertime = day.undertime;
-                const overtime = day.overtime;
-                const night = day.nightDifferential;
-
-                return {
-                    worked: sum.worked + worked,
-                    late: sum.late + late,
-                    undertime: sum.undertime + undertime,
-                    overtime: sum.overtime + overtime,
-                    nightDiff: sum.nightDiff + night
-                };
-            },
-            { worked: 0, late: 0, undertime: 0, overtime: 0, nightDiff: 0 }
-            );
-
-            // console.log(totals);
-
-            return {
-                weekStart,
-                workedHours: totals.worked,
-                late: totals.late,
-                undertime: totals.undertime,
-                overtime: totals.overtime,
-                nightDifferential: totals.nightDiff
-            };
-        });
-    };
-
     const handleWeeklyReport = () => {
         const summary = [];
         resData?.data.data.map((user) => {
-            const weeklySummaryPerUser = getWeeklySummaryPerUser(user);
+            const weeklySummaryPerUser = getWeeklySummaryPerUser(user, attendance);
             weeklySummaryPerUser.forEach((entry) => {
                 summary.push({
                     name: user.name,
@@ -237,7 +108,7 @@ const Activities = () => {
         const summary = [];
         resData?.data.data.map((user) => {
             
-            const dailySummaryPerUser = getDailySummaryPerUser(user);
+            const dailySummaryPerUser = getDailySummaryPerUser(user, attendance);
             dailySummaryPerUser.forEach((entry) => {
                 summary.push({
                     name: user.name,

@@ -38,13 +38,13 @@ export const getWeeklySummaryPerUser = (user, attendance) => {
     // console.log(totals);
 
     return {
-        userId: user.id,
-        weekStart,
-        workedHours: totals.worked,
-        late: totals.late,
-        undertime: totals.undertime,
-        overtime: totals.overtime,
-        nightDifferential: totals.nightDiff,
+      userId: user.id,
+      weekStart,
+      workedHours: totals.worked,
+      late: totals.late,
+      undertime: totals.undertime,
+      overtime: totals.overtime,
+      nightDifferential: totals.nightDiff,
     };
   });
 };

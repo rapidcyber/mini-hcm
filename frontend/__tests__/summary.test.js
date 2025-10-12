@@ -1,4 +1,4 @@
-import { getWeeklySummaryPerUser } from "../src/hooks/getWeeklySummaryPeruser.js";
+import { getWeeklySummaryPerUser } from "../src/utils/getWeeklySummaryPerUser.js";
 import { describe, it, expect } from "@jest/globals";
 
 // Mock attendance data
