@@ -1,4 +1,3 @@
-/*************  ✨ Windsurf Command ⭐  *************/
 # React Boilerplate
 
 A boilerplate for a React application with React Query, Tailwind CSS, and Notistack.
@@ -27,7 +26,6 @@ A boilerplate for a React application with React Query, Tailwind CSS, and Notist
 
 ## Configuration
 
-- `tailwind.config.js`: Configuration for Tailwind CSS
 - `vite.config.js`: Configuration for Vite
 
 ## Tests
@@ -58,4 +56,3 @@ A boilerplate for a React application with React Query, Tailwind CSS, and Notist
 - `public` directory: Contains static assets
 - `tailwind.config.js`: Configuration for Tailwind CSS
 - `vite.config.js`: Configuration for Vite
-/*******  fc9e8907-3fd9-4628-9d66-dae6c7016329  *******/
